@@ -45,18 +45,25 @@ app.get('/quran-teacher-report/report', async (req, res) => {
   }
 
   try {
-    const query = {
-      gradedAt: {
+    // const query = {
+    //   gradedAt: {
+    //     $gte: new Date(from),
+    //     $lte: new Date(to),
+    //   },
+    // };
+
+    // const data = await Assignment.aggregate([
+    //   { $match: query },
+    //   { $group: { _id: '$name', count: { $sum: 1 } } },
+    //   { $project: { _id: 0, name: '$_id', assignmentsGraded: '$count' } },
+    // ]);
+
+    const data = db.assignmentspassdatas.find({
+      updatedAt: {
         $gte: new Date(from),
         $lte: new Date(to),
-      },
-    };
-
-    const data = await Assignment.aggregate([
-      { $match: query },
-      { $group: { _id: '$name', count: { $sum: 1 } } },
-      { $project: { _id: 0, name: '$_id', assignmentsGraded: '$count' } },
-    ]);
+      }
+    });
 
     if(!data.length) return res.status(404).json({"message": "not data found"})
     res.json(data);
