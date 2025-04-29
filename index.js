@@ -26,8 +26,6 @@ mongoose.connect(mongoUri, {
   process.exit(1);
 });
 
-// Models
-// const Assignment = require('./models/Assignment');
 
 // Redirect root to /quran-teacher-report/
 app.get('/', (req, res) => {
@@ -48,7 +46,7 @@ app.get('/quran-teacher-report/report', async (req, res) => {
     const db = mongoose.connection.db;
     const collection = db.collection('assignmentpassdatas');
 
-    const data = await collection.aggregate([
+    const data = await db.collection('assignmentpassdatas').aggregate([
       {
         $match: {
           updatedAt: {
@@ -59,18 +57,30 @@ app.get('/quran-teacher-report/report', async (req, res) => {
       },
       {
         $group: {
-          _id: '$name',
+          _id: '$teacherId',
           assignmentsGraded: { $sum: 1 },
         },
       },
       {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'teacherInfo',
+        },
+      },
+      {
+        $unwind: '$teacherInfo',
+      },
+      {
         $project: {
           _id: 0,
-          name: '$_id',
+          teacher: '$teacherInfo.name',
           assignmentsGraded: 1,
         },
       },
     ]).toArray();
+    
 
     if (!data.length) {
       return res.status(404).json({ message: 'No data found' });
