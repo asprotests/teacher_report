@@ -18,17 +18,18 @@ app.use('/quran-teacher-report', express.static(path.join(__dirname, 'public')))
 const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017';
 const mongoDb = process.env.MONGO_DB || 'tabsera';
 
-mongoose.connect(`${mongoUrl}/${mongoDb}`, {
+const mongoUri = process.env.MONGO_URI;
+
+mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => {
-  console.log('✅ MongoDB connected successfully');
-})
+.then(() => console.log('✅ MongoDB connected successfully'))
 .catch((err) => {
   console.error('❌ MongoDB connection failed:', err.message);
-  process.exit(1); // Stop app if DB fails
+  process.exit(1);
 });
+
 
 const Assignment = require('./models/Assignment');
 
