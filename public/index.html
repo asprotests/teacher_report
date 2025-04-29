@@ -165,7 +165,7 @@
       }
   
       try {
-        const res = await fetch(`/quran-teacher-report/?from=${from}&to=${to}`);
+        const res = await fetch(`/quran-teacher-report/report?from=${from}&to=${to}`);
         if (!res.ok) {
           const err = await res.json();
           message.textContent = err.error || 'Server error occurred.';
