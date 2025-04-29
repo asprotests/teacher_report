@@ -52,10 +52,10 @@ app.get('/quran-teacher-report/report', async (req, res) => {
 
     // Query the collection
     const data = await collection.find({
-      updatedAt: {
-        $gte: new Date(from),
-        $lte: new Date(to),
-      }
+      // updatedAt: {
+      //   $gte: new Date(from),
+      //   $lte: new Date(to),
+      // }
     }).toArray();
 
     console.log(from, to)
