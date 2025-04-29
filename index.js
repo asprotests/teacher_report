@@ -15,10 +15,11 @@ app.use(helmet());
 // Serve frontend at /quran-teacher-report route
 app.use('/quran-teacher-report', express.static(path.join(__dirname, 'public')));
 
-const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017';
-const mongoDb = process.env.MONGO_DB || 'tabsera';
 
 const mongoUri = process.env.MONGO_URI;
+
+console.log('MONGO_URI =', process.env.MONGO_URI);
+
 
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,
