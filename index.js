@@ -9,7 +9,7 @@ const app = express();
 
 // Configure CORS to allow requests from your frontend domain
 const corsOptions = {
-  origin: 'https://quran-tabsera.vercel.app/',
+  origin: 'https://quran-tabsera.vercel.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
