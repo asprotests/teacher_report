@@ -75,11 +75,14 @@ app.get('/quran-teacher-report/report', async (req, res) => {
       {
         $project: {
           _id: 0,
-          teacher: '$teacherInfo.name',
+          teacher: {
+            $concat: ['$teacherInfo.firstName', ' ', '$teacherInfo.lastName'],
+          },
           assignmentsGraded: 1,
         },
       },
     ]).toArray();
+    
     
     
 
