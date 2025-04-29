@@ -18,17 +18,17 @@ app.use('/quran-teacher-report', express.static(path.join(__dirname, 'public')))
 
 const mongoUri = process.env.MONGO_URI;
 
-console.log('MONGO_URI =', process.env.MONGO_URI);
 
+console.log('🚀 Connecting to', process.env.MONGO_URI);
 
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
 .then(() => console.log('✅ MongoDB connected successfully'))
-.catch((err) => {
-  console.error('❌ MongoDB connection failed:', err.message);
-  process.exit(1);
+  .catch((err) => {
+    console.error('❌ MongoDB connection failed:', err);
+    process.exit(1);  
 });
 
 
