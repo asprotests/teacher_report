@@ -51,17 +51,20 @@ app.get('/quran-teacher-report/report', async (req, res) => {
     const collection = mongoose.connection.db.collection('assignmentspassdatas');
 
     // Query the collection
-    const data = await collection.find({
-      // updatedAt: {
-      //   $gte: new Date(from),
-      //   $lte: new Date(to),
-      // }
-    }).toArray();
+    // const data = await collection.find({
+    //   updatedAt: {
+    //     $gte: new Date(from),
+    //     $lte: new Date(to),
+    //   }
+    // }).toArray();
+    const data = await collection.findOne()
+
+
 
     console.log(from, to)
-    // if (!data.length) {
-    //   return res.status(404).json({ message: 'No data found' });
-    // }
+    if (!data.length) {
+      return res.status(404).json({ message: 'No data found' });
+    }
 
     res.json(data);
   } catch (err) {
