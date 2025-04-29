@@ -45,22 +45,37 @@ app.get('/quran-teacher-report/report', async (req, res) => {
   }
 
   try {
-    const query = {
-      gradedAt: {
-        $gte: new Date(from),
-        $lte: new Date(to),
+    const db = mongoose.connection.db;
+    const collection = db.collection('assignmentpassdatas');
+
+    const data = await collection.aggregate([
+      {
+        $match: {
+          updatedAt: {
+            $gte: new Date(from),
+            $lte: new Date(to),
+          },
+        },
       },
-    };
+      {
+        $group: {
+          _id: '$name',
+          assignmentsGraded: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          name: '$_id',
+          assignmentsGraded: 1,
+        },
+      },
+    ]).toArray();
 
-    const data = await Assignment.aggregate([
-      { $match: query },
-      { $group: { _id: '$name', count: { $sum: 1 } } },
-      { $project: { _id: 0, name: '$_id', assignmentsGraded: '$count' } },
-    ]);
+    if (!data.length) {
+      return res.status(404).json({ message: 'No data found' });
+    }
 
-    
-
-    if(!data.length) return res.status(404).json({"message": "not data found"})
     res.json(data);
   } catch (err) {
     console.error('Error generating report:', err);
