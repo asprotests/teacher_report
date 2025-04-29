@@ -58,6 +58,7 @@ app.get('/quran-teacher-report/report', async (req, res) => {
       { $project: { _id: 0, name: '$_id', assignmentsGraded: '$count' } },
     ]);
 
+    if(!data.length) return res.status(404).json({"message": "not data found"})
     res.json(data);
   } catch (err) {
     console.error('Error generating report:', err);
