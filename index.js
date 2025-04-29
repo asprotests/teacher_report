@@ -34,7 +34,7 @@ mongoose.connect(mongoUri, {
 
 const Assignment = require('./models/Assignment');
 
-app.get('/quran-teacher-report/', async (req, res) => {
+app.get('/quran-teacher-report', async (req, res) => {
   const { from, to } = req.query;
   try {
     const query = {
