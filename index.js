@@ -27,7 +27,7 @@ mongoose.connect(mongoUri, {
 });
 
 // Models
-const Assignment = require('./models/Assignment');
+// const Assignment = require('./models/Assignment');
 
 // Redirect root to /quran-teacher-report/
 app.get('/', (req, res) => {
