@@ -58,9 +58,10 @@ app.get('/quran-teacher-report/report', async (req, res) => {
       }
     }).toArray();
 
-    if (!data.length) {
-      return res.status(404).json({ message: 'No data found' });
-    }
+    console.log(from, to)
+    // if (!data.length) {
+    //   return res.status(404).json({ message: 'No data found' });
+    // }
 
     res.json(data);
   } catch (err) {
