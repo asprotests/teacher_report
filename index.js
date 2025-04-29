@@ -57,7 +57,7 @@ app.get('/quran-teacher-report/report', async (req, res) => {
       },
       {
         $group: {
-          _id: '$teacherId',
+          _id: '$teacher',
           assignmentsGraded: { $sum: 1 },
         },
       },
@@ -80,6 +80,7 @@ app.get('/quran-teacher-report/report', async (req, res) => {
         },
       },
     ]).toArray();
+    
     
 
     if (!data.length) {
