@@ -7,8 +7,16 @@ require('dotenv').config();
 
 const app = express();
 
+// Configure CORS to allow requests from your frontend domain
+const corsOptions = {
+  origin: 'https://teacher-report-fe.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(helmet());
 
