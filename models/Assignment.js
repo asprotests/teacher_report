@@ -1,8 +1,7 @@
 const { Schema, model } = require('mongoose');
 
-const assignmentSchema = new Schema({
-  name: String,
-  gradedAt: Date
-});
+const assignmentSchema = new mongoose.Schema({
+  // schema fields
+}, { collection: 'assignmentpassdatas' });
 
-module.exports = model('Assignment', assignmentSchema);
+module.exports = mongoose.model('AssignmentPassData', assignmentSchema);

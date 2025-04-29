@@ -26,6 +26,9 @@ mongoose.connect(mongoUri, {
   process.exit(1);
 });
 
+// Models
+const Assignment = require('./models/Assignment');
+
 // Redirect root to /quran-teacher-report/
 app.get('/', (req, res) => {
   res.redirect('/quran-teacher-report/');
@@ -42,30 +45,22 @@ app.get('/quran-teacher-report/report', async (req, res) => {
   }
 
   try {
-    // Ensure the database connection is established
-    if (!mongoose.connection.db) {
-      return res.status(500).json({ error: 'Database connection not established.' });
-    }
+    const query = {
+      gradedAt: {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      },
+    };
 
-    // Access the native MongoDB driver
-    const collection = mongoose.connection.db.collection('assignmentspassdatas');
+    const data = await Assignment.aggregate([
+      { $match: query },
+      { $group: { _id: '$name', count: { $sum: 1 } } },
+      { $project: { _id: 0, name: '$_id', assignmentsGraded: '$count' } },
+    ]);
 
-    // Query the collection
-    // const data = await collection.find({
-    //   updatedAt: {
-    //     $gte: new Date(from),
-    //     $lte: new Date(to),
-    //   }
-    // }).toArray();
-    const data = await collection.findOne()
+    
 
-
-
-    console.log(from, to)
-    // if (!data.length) {
-    //   return res.status(404).json({ message: 'No data found' });
-    // }
-
+    if(!data.length) return res.status(404).json({"message": "not data found"})
     res.json(data);
   } catch (err) {
     console.error('Error generating report:', err);
