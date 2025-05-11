@@ -81,7 +81,12 @@ app.get("/quran-teacher-report/report", async (req, res) => {
             as: "studentInfo",
           },
         },
-        { $unwind: "$studentInfo" },
+        {
+          $unwind: {
+            path: "$studentInfo",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
         ...(gender.toLowerCase() !== "all"
           ? [
               {
