@@ -74,6 +74,27 @@ app.get("/quran-teacher-report/report", async (req, res) => {
           },
         },
         {
+          $lookup: {
+            from: "users",
+            localField: "student",
+            foreignField: "_id",
+            as: "studentInfo",
+          },
+        },
+        { $unwind: "$studentInfo" },
+        ...(gender.toLowerCase() !== "all"
+          ? [
+              {
+                $match: {
+                  "studentInfo.gender": {
+                    $regex: `^${gender}$`,
+                    $options: "i",
+                  },
+                },
+              },
+            ]
+          : []),
+        {
           $group: {
             _id: null,
             totalAssignments: { $sum: 1 },
@@ -155,6 +176,8 @@ app.get("/quran-teacher-report/report", async (req, res) => {
               $concat: [
                 { $ifNull: ["$firstName", ""] },
                 " ",
+                { $ifNull: ["$middleName", ""] },
+                " ",
                 { $ifNull: ["$lastName", ""] },
               ],
             },
@@ -171,6 +194,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
     const teacherWork = teacherWorkRaw.map((item, index) => ({
       id: index + 1,
       ...item,
+      teacher: item.teacher.trim().replace(/\s+/g, " "), // remove extra spaces
     }));
 
     // ✅ Ensure fallback if no stats found
