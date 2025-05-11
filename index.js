@@ -161,6 +161,24 @@ app.get("/quran-teacher-report/report", async (req, res) => {
             assignmentsGraded: { $size: "$gradedAssignments" },
           },
         },
+        {
+          $match: {
+            $expr: {
+              $ne: [
+                {
+                  $concat: [
+                    { $ifNull: ["$firstName", ""] },
+                    { $ifNull: ["$lastName", ""] },
+                  ],
+                },
+                "",
+              ],
+            },
+          },
+        },
+        {
+          $sort: { assignmentsGraded: -1 },
+        },
 
         {
           $sort: { assignmentsGraded: -1 },
