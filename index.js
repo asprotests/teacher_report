@@ -49,7 +49,7 @@ app.use(
 // API endpoint for report generation
 app.get("/quran-teacher-report/report", async (req, res) => {
   const { from, to, gender } = req.query;
-  if (!from || !to || gender) {
+  if (!from || !to || !gender) {
     return res
       .status(400)
       .json({ error: 'Missing "from" or "to" or "gender" query parameters.' });
