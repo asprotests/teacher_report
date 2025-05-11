@@ -58,63 +58,41 @@ app.get("/quran-teacher-report/report", async (req, res) => {
   try {
     const db = mongoose.connection.db;
 
+    const gradedMatch = {
+      createdAt: {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      },
+      $expr: {
+        $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0], // feedbackFiles is not empty
+      },
+    };
+
+    // ✅ Total graded assignments
     const systemOverview = await db
       .collection("assignmentpassdatas")
       .aggregate([
-        {
-          $match: {
-            updatedAt: {
-              $gte: new Date(from),
-              $lte: new Date(to),
-            },
-          },
-        },
+        { $match: gradedMatch },
         {
           $group: {
             _id: null,
-            totalAssignments: { $sum: 1 },
-            gradedAssignments: {
-              $sum: {
-                $cond: [
-                  { $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
-                  1,
-                  0,
-                ],
-              },
-            },
-            ungradedAssignments: {
-              $sum: {
-                $cond: [
-                  { $eq: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
-                  1,
-                  0,
-                ],
-              },
-            },
+            totalGradedAssignments: { $sum: 1 },
           },
         },
         {
           $project: {
             _id: 0,
-            totalAssignments: 1,
-            gradedAssignments: 1,
-            ungradedAssignments: 1,
+            totalGradedAssignments: 1,
           },
         },
       ])
       .toArray();
 
+    // ✅ Per-teacher graded assignments
     const teacherWork = await db
       .collection("assignmentpassdatas")
       .aggregate([
-        {
-          $match: {
-            updatedAt: {
-              $gte: new Date(from),
-              $lte: new Date(to),
-            },
-          },
-        },
+        { $match: gradedMatch },
         {
           $group: {
             _id: "$teacher",
@@ -129,9 +107,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
             as: "teacherInfo",
           },
         },
-        {
-          $unwind: "$teacherInfo",
-        },
+        { $unwind: "$teacherInfo" },
         {
           $project: {
             _id: 0,
