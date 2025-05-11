@@ -75,12 +75,20 @@ app.get("/quran-teacher-report/report", async (req, res) => {
             totalAssignments: { $sum: 1 },
             gradedAssignments: {
               $sum: {
-                $cond: [{ $ne: ["$feedbackFiles", null] }, 1, 0],
+                $cond: [
+                  { $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                  1,
+                  0,
+                ],
               },
             },
             ungradedAssignments: {
               $sum: {
-                $cond: [{ $eq: ["$feedbackFiles", null] }, 1, 0],
+                $cond: [
+                  { $eq: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                  1,
+                  0,
+                ],
               },
             },
           },
