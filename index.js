@@ -152,7 +152,11 @@ app.get("/quran-teacher-report/report", async (req, res) => {
           $project: {
             _id: 0,
             teacher: {
-              $concat: ["$firstName", " ", "$lastName"],
+              $concat: [
+                { $ifNull: ["$firstName", ""] },
+                " ",
+                { $ifNull: ["$lastName", ""] },
+              ],
             },
             assignmentsGraded: { $size: "$gradedAssignments" },
           },
