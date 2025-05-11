@@ -58,6 +58,9 @@ app.get("/quran-teacher-report/report", async (req, res) => {
   try {
     const db = mongoose.connection.db;
 
+    const fromDate = new Date(`${from}T00:00:00.000Z`);
+    const toDate = new Date(`${to}T23:59:59.999Z`);
+
     // ✅ Top-level stats using createdAt and feedbackFiles size check
     const systemOverview = await db
       .collection("assignmentpassdatas")
@@ -65,8 +68,8 @@ app.get("/quran-teacher-report/report", async (req, res) => {
         {
           $match: {
             createdAt: {
-              $gte: new Date(from),
-              $lte: new Date(to),
+              $gte: fromDate,
+              $lte: toDate,
             },
           },
         },
@@ -112,8 +115,8 @@ app.get("/quran-teacher-report/report", async (req, res) => {
         {
           $match: {
             createdAt: {
-              $gte: new Date(from),
-              $lte: new Date(to),
+              $gte: fromDate,
+              $lte: toDate,
             },
             $expr: {
               $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0],
