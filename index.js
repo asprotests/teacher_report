@@ -106,7 +106,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
       .toArray();
 
     // ✅ Per-teacher graded assignments only (non-empty feedbackFiles)
-    const teacherWork = await db
+    const teacherWorkRaw = await db
       .collection("assignmentpassdatas")
       .aggregate([
         {
@@ -144,8 +144,17 @@ app.get("/quran-teacher-report/report", async (req, res) => {
             assignmentsGraded: 1,
           },
         },
+        {
+          $sort: { assignmentsGraded: -1 }, // ✅ Sort descending
+        },
       ])
       .toArray();
+
+    // ✅ Add sequence IDs (1-based)
+    const teacherWork = teacherWorkRaw.map((item, index) => ({
+      id: index + 1,
+      ...item,
+    }));
 
     // ✅ Ensure fallback if no stats found
     const system = systemOverview[0] || {
