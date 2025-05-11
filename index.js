@@ -61,7 +61,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
     const fromDate = new Date(`${from}T00:00:00.000Z`);
     const toDate = new Date(`${to}T23:59:59.999Z`);
 
-    // ✅ Top-level stats using createdAt and feedbackFiles size check
+    // Top-level stats filtered by student gender
     const systemOverview = await db
       .collection("assignmentpassdatas")
       .aggregate([
@@ -82,10 +82,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
           },
         },
         {
-          $unwind: {
-            path: "$studentInfo",
-            preserveNullAndEmptyArrays: true,
-          },
+          $unwind: "$studentInfo",
         },
         ...(gender.toLowerCase() !== "all"
           ? [
@@ -134,20 +131,15 @@ app.get("/quran-teacher-report/report", async (req, res) => {
       ])
       .toArray();
 
-    // ✅ Per-teacher graded assignments only (non-empty feedbackFiles)
-    const matchGenderRole = {
+    // Per-teacher stats, filtered by student gender
+    const matchTeacher = {
       role: "teacher",
-      ...(gender.toLowerCase() !== "all" && {
-        gender: { $regex: `^${gender}$`, $options: "i" },
-      }),
     };
 
     const teacherWorkRaw = await db
       .collection("users")
       .aggregate([
-        {
-          $match: matchGenderRole,
-        },
+        { $match: matchTeacher },
         {
           $lookup: {
             from: "assignmentpassdatas",
@@ -170,6 +162,27 @@ app.get("/quran-teacher-report/report", async (req, res) => {
                   },
                 },
               },
+              {
+                $lookup: {
+                  from: "users",
+                  localField: "student",
+                  foreignField: "_id",
+                  as: "studentInfo",
+                },
+              },
+              { $unwind: "$studentInfo" },
+              ...(gender.toLowerCase() !== "all"
+                ? [
+                    {
+                      $match: {
+                        "studentInfo.gender": {
+                          $regex: `^${gender}$`,
+                          $options: "i",
+                        },
+                      },
+                    },
+                  ]
+                : []),
             ],
             as: "gradedAssignments",
           },
@@ -189,27 +202,22 @@ app.get("/quran-teacher-report/report", async (req, res) => {
             assignmentsGraded: { $size: "$gradedAssignments" },
           },
         },
-        {
-          $sort: { assignmentsGraded: -1 },
-        },
+        { $sort: { assignmentsGraded: -1 } },
       ])
       .toArray();
 
-    // ✅ Add sequence IDs (1-based)
     const teacherWork = teacherWorkRaw.map((item, index) => ({
       id: index + 1,
       ...item,
-      teacher: item.teacher.trim().replace(/\s+/g, " "), // remove extra spaces
+      teacher: item.teacher.trim().replace(/\s+/g, " "),
     }));
 
-    // ✅ Ensure fallback if no stats found
     const system = systemOverview[0] || {
       totalAssignments: 0,
       gradedAssignments: 0,
       ungradedAssignments: 0,
     };
 
-    // ✅ Final response
     res.json({
       ...system,
       teachers: teacherWork,
