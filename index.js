@@ -48,11 +48,11 @@ app.use(
 
 // API endpoint for report generation
 app.get("/quran-teacher-report/report", async (req, res) => {
-  const { from, to } = req.query;
-  if (!from || !to) {
+  const { from, to, gender } = req.query;
+  if (!from || !to || gender) {
     return res
       .status(400)
-      .json({ error: 'Missing "from" or "to" query parameters.' });
+      .json({ error: 'Missing "from" or "to" or "gender" query parameters.' });
   }
 
   try {
@@ -109,48 +109,70 @@ app.get("/quran-teacher-report/report", async (req, res) => {
       .toArray();
 
     // ✅ Per-teacher graded assignments only (non-empty feedbackFiles)
+    const genderMatchStage =
+      gender.toLowerCase() === "all"
+        ? {} // no filter
+        : {
+            $match: {
+              "teacherInfo.gender": {
+                $regex: `^${gender}$`,
+                $options: "i",
+              },
+            },
+          };
+
+    const pipeline = [
+      {
+        $match: {
+          createdAt: {
+            $gte: fromDate,
+            $lte: toDate,
+          },
+          $expr: {
+            $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$teacher",
+          assignmentsGraded: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "teacherInfo",
+        },
+      },
+      { $unwind: "$teacherInfo" },
+    ];
+
+    // ✅ Conditionally apply gender match
+    if (gender.toLowerCase() !== "all") {
+      pipeline.push(genderMatchStage);
+    }
+
+    pipeline.push(
+      {
+        $project: {
+          _id: 0,
+          teacher: {
+            $concat: ["$teacherInfo.firstName", " ", "$teacherInfo.lastName"],
+          },
+          assignmentsGraded: 1,
+        },
+      },
+      {
+        $sort: { assignmentsGraded: -1 },
+      }
+    );
+
     const teacherWorkRaw = await db
       .collection("assignmentpassdatas")
-      .aggregate([
-        {
-          $match: {
-            createdAt: {
-              $gte: fromDate,
-              $lte: toDate,
-            },
-            $expr: {
-              $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0],
-            },
-          },
-        },
-        {
-          $group: {
-            _id: "$teacher",
-            assignmentsGraded: { $sum: 1 },
-          },
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "_id",
-            foreignField: "_id",
-            as: "teacherInfo",
-          },
-        },
-        { $unwind: "$teacherInfo" },
-        {
-          $project: {
-            _id: 0,
-            teacher: {
-              $concat: ["$teacherInfo.firstName", " ", "$teacherInfo.lastName"],
-            },
-            assignmentsGraded: 1,
-          },
-        },
-        {
-          $sort: { assignmentsGraded: -1 }, // ✅ Sort descending
-        },
-      ])
+      .aggregate(pipeline)
       .toArray();
 
     // ✅ Add sequence IDs (1-based)
