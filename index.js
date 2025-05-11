@@ -58,41 +58,68 @@ app.get("/quran-teacher-report/report", async (req, res) => {
   try {
     const db = mongoose.connection.db;
 
-    const gradedMatch = {
-      createdAt: {
-        $gte: new Date(from),
-        $lte: new Date(to),
-      },
-      $expr: {
-        $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0], // feedbackFiles is not empty
-      },
-    };
-
-    // ✅ Total graded assignments
+    // ✅ Top-level stats using createdAt and feedbackFiles size check
     const systemOverview = await db
       .collection("assignmentpassdatas")
       .aggregate([
-        { $match: gradedMatch },
+        {
+          $match: {
+            createdAt: {
+              $gte: new Date(from),
+              $lte: new Date(to),
+            },
+          },
+        },
         {
           $group: {
             _id: null,
-            totalGradedAssignments: { $sum: 1 },
+            totalAssignments: { $sum: 1 },
+            gradedAssignments: {
+              $sum: {
+                $cond: [
+                  { $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            ungradedAssignments: {
+              $sum: {
+                $cond: [
+                  { $eq: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                  1,
+                  0,
+                ],
+              },
+            },
           },
         },
         {
           $project: {
             _id: 0,
-            totalGradedAssignments: 1,
+            totalAssignments: 1,
+            gradedAssignments: 1,
+            ungradedAssignments: 1,
           },
         },
       ])
       .toArray();
 
-    // ✅ Per-teacher graded assignments
+    // ✅ Per-teacher graded assignments only (non-empty feedbackFiles)
     const teacherWork = await db
       .collection("assignmentpassdatas")
       .aggregate([
-        { $match: gradedMatch },
+        {
+          $match: {
+            createdAt: {
+              $gte: new Date(from),
+              $lte: new Date(to),
+            },
+            $expr: {
+              $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0],
+            },
+          },
+        },
         {
           $group: {
             _id: "$teacher",
@@ -120,12 +147,14 @@ app.get("/quran-teacher-report/report", async (req, res) => {
       ])
       .toArray();
 
+    // ✅ Ensure fallback if no stats found
     const system = systemOverview[0] || {
       totalAssignments: 0,
       gradedAssignments: 0,
       ungradedAssignments: 0,
     };
 
+    // ✅ Final response
     res.json({
       ...system,
       teachers: teacherWork,
