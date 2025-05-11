@@ -179,10 +179,6 @@ app.get("/quran-teacher-report/report", async (req, res) => {
         {
           $sort: { assignmentsGraded: -1 },
         },
-
-        {
-          $sort: { assignmentsGraded: -1 },
-        },
       ])
       .toArray();
 
