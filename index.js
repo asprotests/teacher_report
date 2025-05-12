@@ -152,7 +152,6 @@ app.get("/quran-teacher-report/report", async (req, res) => {
                       { $eq: ["$teacher", "$$teacherId"] },
                       { $gte: ["$createdAt", fromDate] },
                       { $lte: ["$createdAt", toDate] },
-                      //
                       {
                         $gt: [
                           { $size: { $ifNull: ["$feedbackFiles", []] } },
@@ -233,7 +232,9 @@ app.get("/quran-teacher-report/report", async (req, res) => {
     const teacherWork = teacherWorkRaw.map((item, index) => ({
       id: index + 1,
       ...item,
-      teacher: item.teacher.trim().replace(/\s+/g, " "),
+      teacher: item.teacher
+        ? item.teacher.trim().replace(/\s+/g, " ")
+        : "Unnamed Teacher", // fallback
     }));
 
     const system = systemOverview[0] || {
