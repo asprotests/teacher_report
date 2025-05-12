@@ -122,22 +122,20 @@ app.get("/quran-teacher-report/report", async (req, res) => {
               $sum: {
                 $cond: [
                   {
-                    $not: {
-                      $or: [
-                        {
-                          $gt: [
-                            { $size: { $ifNull: ["$feedbackFiles", []] } },
-                            0,
-                          ],
-                        },
-                        {
-                          $and: [
-                            { $ne: ["$feedback", null] },
-                            { $ne: ["$feedback", ""] },
-                          ],
-                        },
-                      ],
-                    },
+                    $and: [
+                      {
+                        $eq: [
+                          { $size: { $ifNull: ["$feedbackFiles", []] } },
+                          0,
+                        ],
+                      },
+                      {
+                        $or: [
+                          { $eq: ["$feedback", null] },
+                          { $eq: ["$feedback", ""] },
+                        ],
+                      },
+                    ],
                   },
                   1,
                   0,
