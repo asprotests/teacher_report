@@ -139,7 +139,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
     const teacherWorkRaw = await db
       .collection("users")
       .aggregate([
-        { $match: matchTeacher },
+        { $match: { role: "teacher" } },
         {
           $lookup: {
             from: "assignmentpassdatas",
@@ -170,36 +170,59 @@ app.get("/quran-teacher-report/report", async (req, res) => {
                   as: "studentInfo",
                 },
               },
-              { $unwind: "$studentInfo" },
-              ...(gender.toLowerCase() !== "all"
-                ? [
-                    {
-                      $match: {
-                        "studentInfo.gender": {
-                          $regex: `^${gender}$`,
-                          $options: "i",
-                        },
-                      },
-                    },
-                  ]
-                : []),
+              {
+                $addFields: {
+                  studentGender: {
+                    $arrayElemAt: ["$studentInfo.gender", 0],
+                  },
+                },
+              },
             ],
             as: "gradedAssignments",
+          },
+        },
+        {
+          $addFields: {
+            filteredAssignments: {
+              $filter: {
+                input: "$gradedAssignments",
+                as: "assignment",
+                cond: {
+                  $or: [
+                    { $eq: [gender.toLowerCase(), "all"] },
+                    {
+                      $regexMatch: {
+                        input: "$$assignment.studentGender",
+                        regex: new RegExp(`^${gender}$`, "i"),
+                      },
+                    },
+                  ],
+                },
+              },
+            },
           },
         },
         {
           $project: {
             _id: 0,
             teacher: {
-              $concat: [
-                { $ifNull: ["$firstName", ""] },
-                " ",
-                { $ifNull: ["$middleName", ""] },
-                " ",
-                { $ifNull: ["$lastName", ""] },
-              ],
+              $trim: {
+                input: {
+                  $reduce: {
+                    input: ["$firstName", "$middleName", "$lastName"],
+                    initialValue: "",
+                    in: {
+                      $cond: [
+                        { $eq: ["$$value", ""] },
+                        "$$this",
+                        { $concat: ["$$value", " ", "$$this"] },
+                      ],
+                    },
+                  },
+                },
+              },
             },
-            assignmentsGraded: { $size: "$gradedAssignments" },
+            assignmentsGraded: { $size: "$filteredAssignments" },
           },
         },
         { $sort: { assignmentsGraded: -1 } },
