@@ -156,7 +156,14 @@ app.get("/quran-teacher-report/report", async (req, res) => {
     const teacherWorkRaw = await db
       .collection("users")
       .aggregate([
-        { $match: { role: "teacher" } },
+        {
+          $match: {
+            role: "teacher",
+            ...(gender.toLowerCase() !== "all" && {
+              gender: { $regex: `^${gender}$`, $options: "i" },
+            }),
+          },
+        },
         {
           $lookup: {
             from: "assignmentpassdatas",
