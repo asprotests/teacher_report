@@ -152,7 +152,6 @@ app.get("/quran-teacher-report/report", async (req, res) => {
                       { $eq: ["$teacher", "$$teacherId"] },
                       { $gte: ["$createdAt", fromDate] },
                       { $lte: ["$createdAt", toDate] },
-                      //
                       {
                         $gt: [
                           { $size: { $ifNull: ["$feedbackFiles", []] } },
