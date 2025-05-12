@@ -54,7 +54,6 @@ app.get("/quran-teacher-report/report", async (req, res) => {
       .status(400)
       .json({ error: 'Missing "from" or "to" or "gender" query parameters.' });
   }
-
   try {
     const db = mongoose.connection.db;
     const fromDate = new Date(`${from}T00:00:00.000Z`);
