@@ -59,7 +59,6 @@ app.get("/quran-teacher-report/report", async (req, res) => {
     const fromDate = new Date(`${from}T00:00:00.000Z`);
     const toDate = new Date(`${to}T00:00:00.000Z`);
 
-    // Top-level stats filtered by student gender
     const systemOverview = await db
       .collection("assignmentpassdatas")
       .aggregate([
@@ -154,7 +153,6 @@ app.get("/quran-teacher-report/report", async (req, res) => {
       ])
       .toArray();
 
-    // Per-teacher stats
     const teacherWorkRaw = await db
       .collection("users")
       .aggregate([
@@ -199,36 +197,21 @@ app.get("/quran-teacher-report/report", async (req, res) => {
                   as: "studentInfo",
                 },
               },
-              {
-                $addFields: {
-                  studentGender: {
-                    $arrayElemAt: ["$studentInfo.gender", 0],
-                  },
-                },
-              },
-            ],
-            as: "gradedAssignments",
-          },
-        },
-        {
-          $addFields: {
-            filteredAssignments: {
-              $filter: {
-                input: "$gradedAssignments",
-                as: "assignment",
-                cond: {
-                  $or: [
-                    { $eq: [gender.toLowerCase(), "all"] },
+              { $unwind: "$studentInfo" },
+              ...(gender.toLowerCase() !== "all"
+                ? [
                     {
-                      $regexMatch: {
-                        input: "$$assignment.studentGender",
-                        regex: new RegExp(`^${gender}$`, "i"),
+                      $match: {
+                        "studentInfo.gender": {
+                          $regex: `^${gender}$`,
+                          $options: "i",
+                        },
                       },
                     },
-                  ],
-                },
-              },
-            },
+                  ]
+                : []),
+            ],
+            as: "gradedAssignments",
           },
         },
         {
@@ -251,7 +234,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
                 },
               },
             },
-            assignmentsGraded: { $size: "$filteredAssignments" },
+            assignmentsGraded: { $size: "$gradedAssignments" },
           },
         },
         { $sort: { assignmentsGraded: -1 } },
