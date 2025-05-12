@@ -57,7 +57,6 @@ app.get("/quran-teacher-report/report", async (req, res) => {
 
   try {
     const db = mongoose.connection.db;
-
     const fromDate = new Date(`${from}T00:00:00.000Z`);
     const toDate = new Date(`${to}T23:59:59.999Z`);
 
@@ -67,10 +66,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
       .aggregate([
         {
           $match: {
-            createdAt: {
-              $gte: fromDate,
-              $lte: toDate,
-            },
+            createdAt: { $gte: fromDate, $lte: toDate },
           },
         },
         {
@@ -81,9 +77,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
             as: "studentInfo",
           },
         },
-        {
-          $unwind: "$studentInfo",
-        },
+        { $unwind: "$studentInfo" },
         ...(gender.toLowerCase() !== "all"
           ? [
               {
@@ -103,7 +97,22 @@ app.get("/quran-teacher-report/report", async (req, res) => {
             gradedAssignments: {
               $sum: {
                 $cond: [
-                  { $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                  {
+                    $or: [
+                      {
+                        $gt: [
+                          { $size: { $ifNull: ["$feedbackFiles", []] } },
+                          0,
+                        ],
+                      },
+                      {
+                        $and: [
+                          { $ne: ["$feedback", null] },
+                          { $ne: ["$feedback", ""] },
+                        ],
+                      },
+                    ],
+                  },
                   1,
                   0,
                 ],
@@ -112,7 +121,24 @@ app.get("/quran-teacher-report/report", async (req, res) => {
             ungradedAssignments: {
               $sum: {
                 $cond: [
-                  { $eq: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                  {
+                    $not: {
+                      $or: [
+                        {
+                          $gt: [
+                            { $size: { $ifNull: ["$feedbackFiles", []] } },
+                            0,
+                          ],
+                        },
+                        {
+                          $and: [
+                            { $ne: ["$feedback", null] },
+                            { $ne: ["$feedback", ""] },
+                          ],
+                        },
+                      ],
+                    },
+                  },
                   1,
                   0,
                 ],
@@ -131,11 +157,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
       ])
       .toArray();
 
-    // Per-teacher stats, filtered by student gender
-    const matchTeacher = {
-      role: "teacher",
-    };
-
+    // Per-teacher stats
     const teacherWorkRaw = await db
       .collection("users")
       .aggregate([
@@ -153,9 +175,19 @@ app.get("/quran-teacher-report/report", async (req, res) => {
                       { $gte: ["$createdAt", fromDate] },
                       { $lte: ["$createdAt", toDate] },
                       {
-                        $gt: [
-                          { $size: { $ifNull: ["$feedbackFiles", []] } },
-                          0,
+                        $or: [
+                          {
+                            $gt: [
+                              { $size: { $ifNull: ["$feedbackFiles", []] } },
+                              0,
+                            ],
+                          },
+                          {
+                            $and: [
+                              { $ne: ["$feedback", null] },
+                              { $ne: ["$feedback", ""] },
+                            ],
+                          },
                         ],
                       },
                     ],
@@ -234,7 +266,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
       ...item,
       teacher: item.teacher
         ? item.teacher.trim().replace(/\s+/g, " ")
-        : "Unnamed Teacher", // fallback
+        : "Unnamed Teacher",
     }));
 
     const system = systemOverview[0] || {
