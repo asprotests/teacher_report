@@ -272,6 +272,73 @@ app.get("/quran-teacher-report/report", async (req, res) => {
   }
 });
 
+app.get("/quran-teacher-report/survey", async (req, res) => {
+  const { from, to } = req.query;
+
+  if (!from || !to) {
+    return res
+      .status(400)
+      .json({ error: 'Missing "from" or "to" query parameters!' });
+  }
+
+  try {
+    const db = mongoose.connection.db;
+    const collection = db.collection("qurandownloadsurvey");
+
+    const fromDate = new Date(`${from}T00:00:00.000Z`);
+    const toDate = new Date(`${to}T23:59:59.999Z`);
+
+    const rawData = await collection
+      .find({
+        type: "agent",
+        createdAt: { $gte: fromDate, $lte: toDate },
+      })
+      .toArray();
+
+    const agentMap = {
+      1001: "Cabdinuur Ciise Aaadan",
+      1002: "Cumar Cabdikaafi Axmed",
+      1003: "Saadaq Shariif Faarax",
+      1004: "Xasan Salaad Tarabi",
+    };
+
+    const report = {};
+    let other = { agent: "Other Agents", android: 0, ios: 0 };
+
+    for (const doc of rawData) {
+      const id = doc.agentId;
+      if (!id) continue;
+
+      const isIOS = /^[0-9A-Fa-f]{8}-/.test(doc.deviceId);
+      const platform = isIOS ? "ios" : "android";
+
+      if (agentMap[id]) {
+        if (!report[id]) {
+          report[id] = { agent: agentMap[id], android: 0, ios: 0 };
+        }
+        report[id][platform]++;
+      } else {
+        other[platform]++;
+      }
+    }
+
+    const result = Object.values(report).map((agent) => ({
+      ...agent,
+      total: agent.android + agent.ios,
+    }));
+
+    if (other.android > 0 || other.ios > 0) {
+      other.total = other.android + other.ios;
+      result.push(other);
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error("Error generating report:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // Start the server
 const PORT = process.env.PORT || 8585;
 app.listen(PORT, () => {
