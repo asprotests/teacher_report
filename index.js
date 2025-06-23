@@ -286,7 +286,7 @@ app.get("/quran-teacher-report/survey", async (req, res) => {
     const collection = db.collection("qurandownloadsurvey");
 
     const fromDate = new Date(`${from}T00:00:00.000Z`);
-    const toDate = new Date(`${to}T23:59:59.999Z`);
+    const toDate = new Date(`${to}T00:00:00.000Z`);
 
     const rawData = await collection
       .find({ createdAt: { $gte: fromDate, $lte: toDate } })
