@@ -289,10 +289,7 @@ app.get("/quran-teacher-report/survey", async (req, res) => {
     const toDate = new Date(`${to}T23:59:59.999Z`);
 
     const rawData = await collection
-      .find({
-        type: "agent",
-        createdAt: { $gte: fromDate, $lte: toDate },
-      })
+      .find({ createdAt: { $gte: fromDate, $lte: toDate } })
       .toArray();
 
     const agentMap = {
@@ -302,37 +299,62 @@ app.get("/quran-teacher-report/survey", async (req, res) => {
       1004: "Xasan Salaad Tarabi",
     };
 
-    const report = {};
-    let other = { agent: "Other Agents", android: 0, ios: 0 };
+    // Initialize result map with all 8 entries
+    const resultMap = {
+      1001: { agent: agentMap[1001], android: 0, ios: 0 },
+      1002: { agent: agentMap[1002], android: 0, ios: 0 },
+      1003: { agent: agentMap[1003], android: 0, ios: 0 },
+      1004: { agent: agentMap[1004], android: 0, ios: 0 },
+      otherAgents: { agent: "Other Agents", android: 0, ios: 0 },
+      social: { agent: "Social Media", android: 0, ios: 0 },
+      friend: { agent: "Friend", android: 0, ios: 0 },
+      other: { agent: "Other", android: 0, ios: 0 },
+    };
 
     for (const doc of rawData) {
-      const id = doc.agentId;
-      if (!id) continue;
-
       const isIOS = /^[0-9A-Fa-f]{8}-/.test(doc.deviceId);
       const platform = isIOS ? "ios" : "android";
 
-      if (agentMap[id]) {
-        if (!report[id]) {
-          report[id] = { agent: agentMap[id], android: 0, ios: 0 };
+      if (doc.type === "agent") {
+        const id = doc.agentId;
+        if (agentMap[id]) {
+          resultMap[id][platform]++;
+        } else {
+          resultMap.otherAgents[platform]++;
         }
-        report[id][platform]++;
-      } else {
-        other[platform]++;
+      } else if (doc.type === "social") {
+        resultMap.social[platform]++;
+      } else if (doc.type === "friend") {
+        resultMap.friend[platform]++;
+      } else if (doc.type === "other") {
+        resultMap.other[platform]++;
       }
     }
 
-    const result = Object.values(report).map((agent) => ({
-      ...agent,
-      total: agent.android + agent.ios,
+    // Convert to list and compute totals
+    const resultList = Object.values(resultMap).map((row) => ({
+      ...row,
+      total: row.android + row.ios,
     }));
 
-    if (other.android > 0 || other.ios > 0) {
-      other.total = other.android + other.ios;
-      result.push(other);
-    }
+    // Sort rows (excluding Total row)
+    resultList.sort((a, b) => b.total - a.total);
 
-    res.json(result);
+    // Compute final Total row
+    const totalRow = resultList.reduce(
+      (acc, row) => {
+        acc.android += row.android;
+        acc.ios += row.ios;
+        acc.total += row.total;
+        return acc;
+      },
+      { agent: "Total", android: 0, ios: 0, total: 0 }
+    );
+
+    // Append total as 9th row
+    resultList.push(totalRow);
+
+    res.json(resultList);
   } catch (err) {
     console.error("Error generating report:", err);
     res.status(500).json({ error: "Server error" });
