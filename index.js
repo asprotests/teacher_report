@@ -47,6 +47,21 @@ function authorizeRole(role) {
   };
 }
 
+// MongoDB Connection
+const mongoUri = process.env.MONGO_URI;
+console.log("🚀 Connecting to", mongoUri);
+
+mongoose
+  .connect(mongoUri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err);
+    process.exit(1);
+  });
+
 // Login route
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
@@ -62,21 +77,6 @@ app.post("/api/login", async (req, res) => {
   );
   res.json({ token });
 });
-
-// MongoDB Connection
-const mongoUri = process.env.MONGO_URI;
-console.log("🚀 Connecting to", mongoUri);
-
-mongoose
-  .connect(mongoUri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection failed:", err);
-    process.exit(1);
-  });
 
 // Redirect root to /quran-teacher-report/
 app.get("/", (req, res) => {
