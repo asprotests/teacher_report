@@ -361,6 +361,136 @@ app.get("/quran-teacher-report/survey", async (req, res) => {
   }
 });
 
+app.get("/quran-teacher-report/submissions", async (req, res) => {
+  const { from, to, teacher } = req.query;
+
+  if (!from || !to || !teacher) {
+    return res
+      .status(400)
+      .json({ error: 'Missing "from", "to", or "teacher" query parameters!' });
+  }
+
+  try {
+    const db = mongoose.connection.db;
+    const collection = db.collection("assignmentpassdatas");
+
+    const fromDate = new Date(`${from}T00:00:00.000Z`);
+    const toDate = new Date(`${to}T00:00:00.000Z`);
+
+    const data = await collection
+      .aggregate([
+        {
+          $match: {
+            createdAt: { $gte: fromDate, $lte: toDate },
+            status: { $in: ["passed", "failed"] },
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "student",
+            foreignField: "_id",
+            as: "studentInfo",
+          },
+        },
+        { $unwind: "$studentInfo" },
+        {
+          $lookup: {
+            from: "users",
+            localField: "teacher",
+            foreignField: "_id",
+            as: "teacherInfo",
+          },
+        },
+        { $unwind: "$teacherInfo" },
+        {
+          $addFields: {
+            teacherFullName: {
+              $trim: {
+                input: {
+                  $reduce: {
+                    input: [
+                      "$teacherInfo.firstName",
+                      "$teacherInfo.middleName",
+                      "$teacherInfo.lastName",
+                    ],
+                    initialValue: "",
+                    in: {
+                      $cond: [
+                        { $eq: ["$$value", ""] },
+                        "$$this",
+                        { $concat: ["$$value", " ", "$$this"] },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        {
+          $match: {
+            teacherFullName: teacher,
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            studentName: {
+              $trim: {
+                input: {
+                  $reduce: {
+                    input: [
+                      "$studentInfo.firstName",
+                      "$studentInfo.middleName",
+                      "$studentInfo.lastName",
+                    ],
+                    initialValue: "",
+                    in: {
+                      $cond: [
+                        { $eq: ["$$value", ""] },
+                        "$$this",
+                        { $concat: ["$$value", " ", "$$this"] },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+            submissionUrl: {
+              $cond: [
+                { $gt: [{ $size: { $ifNull: ["$attachments", []] } }, 0] },
+                { $arrayElemAt: ["$attachments.url", 0] },
+                null,
+              ],
+            },
+            status: "$status",
+            teacherResponseAudio: {
+              $cond: [
+                { $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                { $arrayElemAt: ["$feedbackFiles.url", -1] },
+                null,
+              ],
+            },
+            teacherResponseText: {
+              $cond: [
+                { $eq: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                "$feedback",
+                null,
+              ],
+            },
+          },
+        },
+      ])
+      .toArray();
+
+    res.json(data);
+  } catch (err) {
+    console.error("Error fetching submissions:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // Start the server
 const PORT = process.env.PORT || 8585;
 app.listen(PORT, () => {
