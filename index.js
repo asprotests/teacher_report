@@ -3,9 +3,14 @@ const mongoose = require("mongoose");
 const helmet = require("helmet");
 const cors = require("cors");
 const path = require("path");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const users = require("./users");
 require("dotenv").config();
 
 const app = express();
+
+const SECRET_KEY = process.env.JWT_SECRET;
 
 // Configure CORS to allow requests from your frontend domain
 const corsOptions = {
@@ -19,6 +24,44 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(helmet());
+
+// Middleware: authenticate token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Token missing" });
+
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.status(403).json({ error: "Invalid token" });
+    req.user = user;
+    next();
+  });
+}
+
+// Middleware: authorize by role
+function authorizeRole(role) {
+  return (req, res, next) => {
+    if (req.user.role !== role)
+      return res.status(403).json({ error: "Forbidden" });
+    next();
+  };
+}
+
+// Login route
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find((u) => u.username === username);
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const token = jwt.sign(
+    { username: user.username, role: user.role },
+    SECRET_KEY,
+    { expiresIn: "1h" }
+  );
+  res.json({ token });
+});
 
 // MongoDB Connection
 const mongoUri = process.env.MONGO_URI;
@@ -47,7 +90,7 @@ app.use(
 );
 
 // API endpoint for report generation
-app.get("/quran-teacher-report/report", async (req, res) => {
+app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
   const { from, to, gender } = req.query;
   if (!from || !to || !gender) {
     return res
@@ -272,7 +315,7 @@ app.get("/quran-teacher-report/report", async (req, res) => {
   }
 });
 
-app.get("/quran-teacher-report/survey", async (req, res) => {
+app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
   const { from, to } = req.query;
 
   if (!from || !to) {
@@ -361,135 +404,140 @@ app.get("/quran-teacher-report/survey", async (req, res) => {
   }
 });
 
-app.get("/quran-teacher-report/submissions", async (req, res) => {
-  const { from, to, teacher } = req.query;
+app.get(
+  "/quran-teacher-report/submissions",
+  authenticateToken,
+  authorizeRole("admin"),
+  async (req, res) => {
+    const { from, to, teacher } = req.query;
 
-  if (!from || !to || !teacher) {
-    return res
-      .status(400)
-      .json({ error: 'Missing "from", "to", or "teacher" query parameters!' });
-  }
+    if (!from || !to || !teacher) {
+      return res.status(400).json({
+        error: 'Missing "from", "to", or "teacher" query parameters!',
+      });
+    }
 
-  try {
-    const db = mongoose.connection.db;
-    const collection = db.collection("assignmentpassdatas");
+    try {
+      const db = mongoose.connection.db;
+      const collection = db.collection("assignmentpassdatas");
 
-    const fromDate = new Date(`${from}T00:00:00.000Z`);
-    const toDate = new Date(`${to}T00:00:00.000Z`);
+      const fromDate = new Date(`${from}T00:00:00.000Z`);
+      const toDate = new Date(`${to}T00:00:00.000Z`);
 
-    const data = await collection
-      .aggregate([
-        {
-          $match: {
-            createdAt: { $gte: fromDate, $lte: toDate },
-            status: { $in: ["passed", "failed"] },
+      const data = await collection
+        .aggregate([
+          {
+            $match: {
+              createdAt: { $gte: fromDate, $lte: toDate },
+              status: { $in: ["passed", "failed"] },
+            },
           },
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "student",
-            foreignField: "_id",
-            as: "studentInfo",
+          {
+            $lookup: {
+              from: "users",
+              localField: "student",
+              foreignField: "_id",
+              as: "studentInfo",
+            },
           },
-        },
-        { $unwind: "$studentInfo" },
-        {
-          $lookup: {
-            from: "users",
-            localField: "teacher",
-            foreignField: "_id",
-            as: "teacherInfo",
+          { $unwind: "$studentInfo" },
+          {
+            $lookup: {
+              from: "users",
+              localField: "teacher",
+              foreignField: "_id",
+              as: "teacherInfo",
+            },
           },
-        },
-        { $unwind: "$teacherInfo" },
-        {
-          $addFields: {
-            teacherFullName: {
-              $trim: {
-                input: {
-                  $reduce: {
-                    input: [
-                      "$teacherInfo.firstName",
-                      "$teacherInfo.middleName",
-                      "$teacherInfo.lastName",
-                    ],
-                    initialValue: "",
-                    in: {
-                      $cond: [
-                        { $eq: ["$$value", ""] },
-                        "$$this",
-                        { $concat: ["$$value", " ", "$$this"] },
+          { $unwind: "$teacherInfo" },
+          {
+            $addFields: {
+              teacherFullName: {
+                $trim: {
+                  input: {
+                    $reduce: {
+                      input: [
+                        "$teacherInfo.firstName",
+                        "$teacherInfo.middleName",
+                        "$teacherInfo.lastName",
                       ],
+                      initialValue: "",
+                      in: {
+                        $cond: [
+                          { $eq: ["$$value", ""] },
+                          "$$this",
+                          { $concat: ["$$value", " ", "$$this"] },
+                        ],
+                      },
                     },
                   },
                 },
               },
             },
           },
-        },
-        {
-          $match: {
-            teacherFullName: teacher,
+          {
+            $match: {
+              teacherFullName: teacher,
+            },
           },
-        },
-        {
-          $project: {
-            _id: 0,
-            studentName: {
-              $trim: {
-                input: {
-                  $reduce: {
-                    input: [
-                      "$studentInfo.firstName",
-                      "$studentInfo.middleName",
-                      "$studentInfo.lastName",
-                    ],
-                    initialValue: "",
-                    in: {
-                      $cond: [
-                        { $eq: ["$$value", ""] },
-                        "$$this",
-                        { $concat: ["$$value", " ", "$$this"] },
+          {
+            $project: {
+              _id: 0,
+              studentName: {
+                $trim: {
+                  input: {
+                    $reduce: {
+                      input: [
+                        "$studentInfo.firstName",
+                        "$studentInfo.middleName",
+                        "$studentInfo.lastName",
                       ],
+                      initialValue: "",
+                      in: {
+                        $cond: [
+                          { $eq: ["$$value", ""] },
+                          "$$this",
+                          { $concat: ["$$value", " ", "$$this"] },
+                        ],
+                      },
                     },
                   },
                 },
               },
-            },
-            submissionUrl: {
-              $cond: [
-                { $gt: [{ $size: { $ifNull: ["$attachments", []] } }, 0] },
-                { $arrayElemAt: ["$attachments.url", 0] },
-                null,
-              ],
-            },
-            status: "$status",
-            teacherResponseAudio: {
-              $cond: [
-                { $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
-                { $arrayElemAt: ["$feedbackFiles.url", -1] },
-                null,
-              ],
-            },
-            teacherResponseText: {
-              $cond: [
-                { $eq: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
-                "$feedback",
-                null,
-              ],
+              submissionUrl: {
+                $cond: [
+                  { $gt: [{ $size: { $ifNull: ["$attachments", []] } }, 0] },
+                  { $arrayElemAt: ["$attachments.url", 0] },
+                  null,
+                ],
+              },
+              status: "$status",
+              teacherResponseAudio: {
+                $cond: [
+                  { $gt: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                  { $arrayElemAt: ["$feedbackFiles.url", -1] },
+                  null,
+                ],
+              },
+              teacherResponseText: {
+                $cond: [
+                  { $eq: [{ $size: { $ifNull: ["$feedbackFiles", []] } }, 0] },
+                  "$feedback",
+                  null,
+                ],
+              },
             },
           },
-        },
-      ])
-      .toArray();
+        ])
+        .toArray();
 
-    res.json(data);
-  } catch (err) {
-    console.error("Error fetching submissions:", err);
-    res.status(500).json({ error: "Server error" });
+      res.json(data);
+    } catch (err) {
+      console.error("Error fetching submissions:", err);
+      res.status(500).json({ error: "Server error" });
+    }
   }
-});
+);
 
 // Start the server
 const PORT = process.env.PORT || 8585;
