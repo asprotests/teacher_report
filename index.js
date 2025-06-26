@@ -342,6 +342,8 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       1004: "Xasan Salaad Tarabi",
       1005: "Cabdullahi Aadan",
       1006: "Maxamed Cumar",
+      1007: "Maxamuud Sidow",
+      1008: "Khaalid Cabdullaahi",
     };
 
     // Initialize result map with all 8 entries
@@ -352,6 +354,8 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       1004: { agent: agentMap[1004], android: 0, ios: 0 },
       1005: { agent: agentMap[1005], android: 0, ios: 0 },
       1006: { agent: agentMap[1006], android: 0, ios: 0 },
+      1007: { agent: agentMap[1007], android: 0, ios: 0 },
+      1008: { agent: agentMap[1008], android: 0, ios: 0 },
       otherAgents: { agent: "Other Agents", android: 0, ios: 0 },
       social: { agent: "Social Media", android: 0, ios: 0 },
       friend: { agent: "Friend", android: 0, ios: 0 },
