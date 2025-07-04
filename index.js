@@ -373,7 +373,7 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
         } else {
           resultMap.otherAgents[platform]++;
         }
-      } else if (doc.type === "social") {
+      } else if (doc.type === "social media") {
         resultMap.social[platform]++;
       } else if (doc.type === "friend") {
         resultMap.friend[platform]++;
