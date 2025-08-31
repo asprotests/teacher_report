@@ -349,6 +349,7 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       1002: { agent: agentMap[1002], android: 0, ios: 0 },
       1003: { agent: agentMap[1003], android: 0, ios: 0 },
       1004: { agent: agentMap[1004], android: 0, ios: 0 },
+      2000: { agent: agentMap[2000], android: 0, ios: 0 },
       otherAgents: { agent: "Other Agents", android: 0, ios: 0 },
       social: { agent: "Social Media", android: 0, ios: 0 },
       friend: { agent: "Friend", android: 0, ios: 0 },
