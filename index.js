@@ -340,6 +340,7 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       1002: "Cumar Cabdikaafi Axmed",
       1003: "Saadaq Shariif Faarax",
       1004: "Xasan Salaad Tarabi",
+      2000: "Team Hamza Campaign",
     };
 
     // Initialize result map with all 8 entries
