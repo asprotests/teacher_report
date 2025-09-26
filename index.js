@@ -315,6 +315,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
   }
 });
 
+// Survey endpoint with new agents added
 app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
   const { from, to } = req.query;
 
@@ -341,15 +342,28 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       1003: "Saadaq Shariif Faarax",
       1004: "Xasan Salaad Tarabi",
       2000: "Team Hamza Campaign",
+      10: "Awees Sh Nuur",
+      20: "Macalin Muse",
+      30: "Teacher Mahad",
+      40: "Wadad Yare",
+      50: "Daaci Abshir",
+      60: "Xasan Khaliif",
+      70: "Daaci Xasan",
     };
 
-    // Initialize result map with all 8 entries
     const resultMap = {
       1001: { agent: agentMap[1001], android: 0, ios: 0 },
       1002: { agent: agentMap[1002], android: 0, ios: 0 },
       1003: { agent: agentMap[1003], android: 0, ios: 0 },
       1004: { agent: agentMap[1004], android: 0, ios: 0 },
       2000: { agent: agentMap[2000], android: 0, ios: 0 },
+      10: { agent: agentMap[10], android: 0, ios: 0 },
+      20: { agent: agentMap[20], android: 0, ios: 0 },
+      30: { agent: agentMap[30], android: 0, ios: 0 },
+      40: { agent: agentMap[40], android: 0, ios: 0 },
+      50: { agent: agentMap[50], android: 0, ios: 0 },
+      60: { agent: agentMap[60], android: 0, ios: 0 },
+      70: { agent: agentMap[70], android: 0, ios: 0 },
       otherAgents: { agent: "Other Agents", android: 0, ios: 0 },
       social: { agent: "Social Media", android: 0, ios: 0 },
       friend: { agent: "Friend", android: 0, ios: 0 },
@@ -376,16 +390,13 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       }
     }
 
-    // Convert to list and compute totals
     const resultList = Object.values(resultMap).map((row) => ({
       ...row,
       total: row.android + row.ios,
     }));
 
-    // Sort rows (excluding Total row)
     resultList.sort((a, b) => b.total - a.total);
 
-    // Compute final Total row
     const totalRow = resultList.reduce(
       (acc, row) => {
         acc.android += row.android;
@@ -396,7 +407,6 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       { agent: "Total", android: 0, ios: 0, total: 0 }
     );
 
-    // Append total as 9th row
     resultList.push(totalRow);
 
     res.json(resultList);
@@ -406,6 +416,7 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
   }
 });
 
+// Submissions endpoint
 app.get(
   "/quran-teacher-report/submissions",
   authenticateToken,
