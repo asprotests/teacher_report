@@ -337,11 +337,6 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       .toArray();
 
     const agentMap = {
-      1001: "Cabdinuur Ciise Aaadan",
-      1002: "Cumar Cabdikaafi Axmed",
-      1003: "Saadaq Shariif Faarax",
-      1004: "Xasan Salaad Tarabi",
-      2000: "Team Hamza Campaign",
       10: "Awees Sh Nuur",
       15: "Ibra Hakiim",
       20: "Macalin Muse",
@@ -350,7 +345,6 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       35: "Run Kudhiigle",
       40: "Wadad Yare",
       45: "Macalin Ismaaciil",
-      50: "Daaci Abshir",
       55: "Daaci Cabdullaahi",
       60: "Xasan Khaliif",
       65: "Maxamed Macalin",
@@ -360,11 +354,6 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
     };
 
     const resultMap = {
-      1001: { agent: agentMap[1001], android: 0, ios: 0 },
-      1002: { agent: agentMap[1002], android: 0, ios: 0 },
-      1003: { agent: agentMap[1003], android: 0, ios: 0 },
-      1004: { agent: agentMap[1004], android: 0, ios: 0 },
-      2000: { agent: agentMap[2000], android: 0, ios: 0 },
       10: { agent: agentMap[10], android: 0, ios: 0 },
       15: { agent: agentMap[15], android: 0, ios: 0 },
       20: { agent: agentMap[20], android: 0, ios: 0 },
@@ -373,7 +362,6 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       35: { agent: agentMap[35], android: 0, ios: 0 },
       40: { agent: agentMap[40], android: 0, ios: 0 },
       45: { agent: agentMap[45], android: 0, ios: 0 },
-      50: { agent: agentMap[50], android: 0, ios: 0 },
       55: { agent: agentMap[55], android: 0, ios: 0 },
       60: { agent: agentMap[60], android: 0, ios: 0 },
       65: { agent: agentMap[65], android: 0, ios: 0 },
