@@ -91,18 +91,22 @@ app.use(
 
 // API endpoint for report generation
 app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
-  const { from, to, gender } = req.query;
+  const { from, to, gender, dailyActivity } = req.query;
 
-  if (!from || !to || !gender) {
-    return res
-      .status(400)
-      .json({ error: 'Missing "from", "to", or "gender" query parameters.' });
+  if (!from || !to || !gender || !dailyActivity) {
+    return res.status(400).json({
+      error:
+        'Missing "from", "to", "gender", or "dailyActivity" query parameters.',
+    });
   }
+
+  // ✅ Correctly decide which field to filter by
+  const filterField = dailyActivity == "true" ? "updatedAt" : "createdAt";
 
   try {
     const db = mongoose.connection.db;
     const fromDate = new Date(`${from}T00:00:00.000Z`);
-    const toDate = new Date(`${to}T23:59:59.999Z`);
+    const toDate = new Date(`${to}T00:00:00.000Z`);
 
     const teacherNames = [
       "Ahmed Abdulkarim Almasry",
@@ -117,12 +121,13 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       "Cabdul Qaadir Markaawi",
     ].map((n) => n.trim().toLowerCase());
 
+    // --- SYSTEM OVERVIEW ---
     const systemOverview = await db
       .collection("assignmentpassdatas")
       .aggregate([
         {
           $match: {
-            createdAt: { $gte: fromDate, $lte: toDate },
+            [filterField]: { $gte: fromDate, $lte: toDate },
           },
         },
         {
@@ -246,9 +251,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
         },
         {
           $match: {
-            $expr: {
-              $in: [{ $toLower: "$fullName" }, teacherNames],
-            },
+            $expr: { $in: [{ $toLower: "$fullName" }, teacherNames] },
           },
         },
         {
@@ -261,8 +264,8 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
                   $expr: {
                     $and: [
                       { $eq: ["$teacher", "$$teacherId"] },
-                      { $gte: ["$createdAt", fromDate] },
-                      { $lte: ["$createdAt", toDate] },
+                      { $gte: [`$${filterField}`, fromDate] },
+                      { $lte: [`$${filterField}`, toDate] },
                       {
                         $or: [
                           {
@@ -333,10 +336,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       ungradedAssignments: 0,
     };
 
-    res.json({
-      ...system,
-      teachers: teacherWork,
-    });
+    res.json({ ...system, teachers: teacherWork });
   } catch (err) {
     console.error("Error generating report:", err);
     res.status(500).json({ error: "Server error" });
