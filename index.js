@@ -122,7 +122,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       .aggregate([
         {
           $match: {
-            createdAt: { $gte: fromDate, $lte: toDate },
+            updatedAt: { $gte: fromDate, $lte: toDate },
           },
         },
         {
