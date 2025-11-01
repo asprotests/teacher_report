@@ -261,8 +261,8 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
                   $expr: {
                     $and: [
                       { $eq: ["$teacher", "$$teacherId"] },
-                      { $gte: ["$createdAt", fromDate] },
-                      { $lte: ["$createdAt", toDate] },
+                      { $gte: ["$updatedAt", fromDate] },
+                      { $lte: ["$updatedAt", toDate] },
                       {
                         $or: [
                           {
