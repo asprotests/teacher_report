@@ -100,7 +100,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
   }
 
   // ✅ Fix: Properly handle query string and field usage
-  const isActivity = String(onlyActivity).toLowerCase() === "true";
+  const isActivity = String(onlyActivity).toLowerCase() == "true";
   const filter = isActivity ? "updatedAt" : "createdAt"; // used for normal $match
   const filterExpr = `$${filter}`; // used for $expr inside pipelines
   console.log(isActivity, filter, filterExpr);
