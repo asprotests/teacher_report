@@ -101,7 +101,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
   }
 
   // ✅ Correctly decide which field to filter by
-  const filterField = !dailyActivity ? "createdAt" : "updatedAt";
+  const filterField = dailyActivity == false ? "createdAt" : "updatedAt";
 
   try {
     const db = mongoose.connection.db;
