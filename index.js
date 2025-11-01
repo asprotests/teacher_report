@@ -92,15 +92,30 @@ app.use(
 // API endpoint for report generation
 app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
   const { from, to, gender } = req.query;
+
   if (!from || !to || !gender) {
     return res
       .status(400)
-      .json({ error: 'Missing "from" or "to" or "gender" query parameters.' });
+      .json({ error: 'Missing "from", "to", or "gender" query parameters.' });
   }
+
   try {
     const db = mongoose.connection.db;
     const fromDate = new Date(`${from}T00:00:00.000Z`);
-    const toDate = new Date(`${to}T00:00:00.000Z`);
+    const toDate = new Date(`${to}T23:59:59.999Z`);
+
+    const teacherNames = [
+      "Ahmed Abdulkarim Almasry",
+      "Kaltuun Cabdullaahi Aadan",
+      "Rahma Abdinur Ali",
+      "Umulkheyr Hussein Abdullah",
+      "Maymun Hussein Mohamed",
+      "Aisha Omar Hussein",
+      "Cabdinuur Ciise Aadan",
+      "Abdullahi Osman Farah",
+      "Abdullahi Mohamed Ahmed",
+      "Cabdul Qaadir Markaawi",
+    ].map((n) => n.trim().toLowerCase());
 
     const systemOverview = await db
       .collection("assignmentpassdatas")
@@ -196,6 +211,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       ])
       .toArray();
 
+    // --- TEACHER REPORT ---
     const teacherWorkRaw = await db
       .collection("users")
       .aggregate([
@@ -205,6 +221,34 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
             ...(gender.toLowerCase() !== "all" && {
               gender: { $regex: `^${gender}$`, $options: "i" },
             }),
+          },
+        },
+        {
+          $addFields: {
+            fullName: {
+              $trim: {
+                input: {
+                  $reduce: {
+                    input: ["$firstName", "$middleName", "$lastName"],
+                    initialValue: "",
+                    in: {
+                      $cond: [
+                        { $eq: ["$$value", ""] },
+                        "$$this",
+                        { $concat: ["$$value", " ", "$$this"] },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        {
+          $match: {
+            $expr: {
+              $in: [{ $toLower: "$fullName" }, teacherNames],
+            },
           },
         },
         {
@@ -267,23 +311,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
         {
           $project: {
             _id: 0,
-            teacher: {
-              $trim: {
-                input: {
-                  $reduce: {
-                    input: ["$firstName", "$middleName", "$lastName"],
-                    initialValue: "",
-                    in: {
-                      $cond: [
-                        { $eq: ["$$value", ""] },
-                        "$$this",
-                        { $concat: ["$$value", " ", "$$this"] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
+            teacher: "$fullName",
             assignmentsGraded: { $size: "$gradedAssignments" },
           },
         },
