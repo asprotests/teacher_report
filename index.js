@@ -108,6 +108,8 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
     const fromDate = new Date(`${from}T00:00:00.000Z`);
     const toDate = new Date(`${to}T00:00:00.000Z`);
 
+    console.log(dailyActivity, from, to);
+
     const teacherNames = [
       "Ahmed Abdulkarim Almasry",
       "Kaltuun Cabdullaahi Aadan",
