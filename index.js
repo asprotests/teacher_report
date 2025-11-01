@@ -91,13 +91,15 @@ app.use(
 
 // API endpoint for report generation
 app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
-  const { from, to, gender } = req.query;
+  const { from, to, gender, onlyActivity } = req.query;
 
   if (!from || !to || !gender) {
     return res
       .status(400)
       .json({ error: 'Missing "from", "to", or "gender" query parameters.' });
   }
+
+  let filter = onlyActivity == true ? "$updatedAt" : "$createdAt";
 
   try {
     const db = mongoose.connection.db;
@@ -122,7 +124,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       .aggregate([
         {
           $match: {
-            createdAt: { $gte: fromDate, $lte: toDate },
+            [filter]: { $gte: fromDate, $lte: toDate },
           },
         },
         {
@@ -261,8 +263,8 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
                   $expr: {
                     $and: [
                       { $eq: ["$teacher", "$$teacherId"] },
-                      { $gte: ["$createdAt", fromDate] },
-                      { $lte: ["$createdAt", toDate] },
+                      { $gte: [filter, fromDate] },
+                      { $lte: [filter, toDate] },
                       {
                         $or: [
                           {
