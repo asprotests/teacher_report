@@ -91,13 +91,18 @@ app.use(
 
 // API endpoint for report generation
 app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
-  const { from, to, gender } = req.query;
+  const { from, to, gender, onlyActivity } = req.query;
 
   if (!from || !to || !gender) {
     return res
       .status(400)
       .json({ error: 'Missing "from", "to", or "gender" query parameters.' });
   }
+
+  // ✅ Fix: Properly handle query string and field usage
+  const isActivity = String(onlyActivity).toLowerCase() === "true";
+  const filter = isActivity ? "updatedAt" : "createdAt"; // used for normal $match
+  const filterExpr = `$${filter}`; // used for $expr inside pipelines
 
   try {
     const db = mongoose.connection.db;
@@ -117,12 +122,13 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       "Cabdul Qaadir Markaawi",
     ].map((n) => n.trim().toLowerCase());
 
+    // ===== SYSTEM OVERVIEW =====
     const systemOverview = await db
       .collection("assignmentpassdatas")
       .aggregate([
         {
           $match: {
-            createdAt: { $gte: fromDate, $lte: toDate },
+            [filter]: { $gte: fromDate, $lte: toDate },
           },
         },
         {
@@ -211,7 +217,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       ])
       .toArray();
 
-    // --- TEACHER REPORT ---
+    // ===== TEACHER REPORT =====
     const teacherWorkRaw = await db
       .collection("users")
       .aggregate([
@@ -261,8 +267,8 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
                   $expr: {
                     $and: [
                       { $eq: ["$teacher", "$$teacherId"] },
-                      { $gte: ["$createdAt", fromDate] },
-                      { $lte: ["$createdAt", toDate] },
+                      { $gte: [filterExpr, fromDate] }, // ✅ use $updatedAt or $createdAt correctly
+                      { $lte: [filterExpr, toDate] },
                       {
                         $or: [
                           {
@@ -333,6 +339,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       ungradedAssignments: 0,
     };
 
+    // ===== FINAL RESPONSE =====
     res.json({
       ...system,
       teachers: teacherWork,
