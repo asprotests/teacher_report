@@ -122,7 +122,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       .aggregate([
         {
           $match: {
-            updatedAt: { $gte: fromDate, $lte: toDate },
+            createdAt: { $gte: fromDate, $lte: toDate },
           },
         },
         {
@@ -261,8 +261,8 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
                   $expr: {
                     $and: [
                       { $eq: ["$teacher", "$$teacherId"] },
-                      { $gte: ["$updatedAt", fromDate] },
-                      { $lte: ["$updatedAt", toDate] },
+                      { $gte: ["$createdAt", fromDate] },
+                      { $lte: ["$createdAt", toDate] },
                       {
                         $or: [
                           {
