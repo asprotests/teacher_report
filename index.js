@@ -103,6 +103,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
   const isActivity = String(onlyActivity).toLowerCase() === "true";
   const filter = isActivity ? "updatedAt" : "createdAt"; // used for normal $match
   const filterExpr = `$${filter}`; // used for $expr inside pipelines
+  console.log(isActivity, filter, filterExpr);
 
   try {
     const db = mongoose.connection.db;
