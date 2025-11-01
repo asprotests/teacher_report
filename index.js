@@ -93,7 +93,7 @@ app.use(
 app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
   const { from, to, gender, dailyActivity } = req.query;
 
-  if (!from || !to || !gender || !dailyActivity) {
+  if (!from || !to || !gender) {
     return res.status(400).json({
       error:
         'Missing "from", "to", "gender", or "dailyActivity" query parameters.',
