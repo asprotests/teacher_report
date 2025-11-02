@@ -108,7 +108,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
   try {
     const db = mongoose.connection.db;
     const fromDate = new Date(`${from}T00:00:00.000Z`);
-    const toDate = new Date(`${to}T23:59:59.999Z`);
+    const toDate = new Date(`${to}T00:00:00.000Z`);
 
     const teacherNames = [
       "Ahmed Abdulkarim Almasry",
