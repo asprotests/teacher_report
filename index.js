@@ -121,6 +121,19 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       "Abdullahi Osman Farah",
       "Abdullahi Mohamed Ahmed",
       "Cabdul Qaadir Markaawi",
+      "Cabdulshakuur Xuseen Dheelmade",
+      "Abdirazak Abdiqadir Ali",
+      "Mursal Shariif Farax",
+      "Cabdullahi Yuusuf Salad",
+      "Aisha Khalif Mohamed",
+      "Abdi Rahman Mohamed",
+      "Mohamed Khaliif Mohamed",
+      "Liban Botan Hede",
+      "Faysal Bashir Ali",
+      "Abdullahi Hussein Ibrahim",
+      "Abuubakar Mustafa Abasheekh",
+      "Ibrahim Osman Abdullahi",
+      "Abdirahman Mohamed Ahmed",
     ].map((n) => n.trim().toLowerCase());
 
     // ===== SYSTEM OVERVIEW =====
