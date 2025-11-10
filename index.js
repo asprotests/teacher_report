@@ -134,6 +134,11 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       "Abuubakar Mustafa Abasheekh",
       "Ibrahim Osman Abdullahi",
       "Abdirahman Mohamed Ahmed",
+      "Ali Hussein Abdi",
+      "Mohamed Dhaqane Ismail",
+      "Ismail Mukhtaar Maxamuud",
+      "Abdirahman Ibrahim Shire",
+      "Iqra Abdinuur Ali",
     ].map((n) => n.trim().toLowerCase());
 
     // ===== SYSTEM OVERVIEW =====
