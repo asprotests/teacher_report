@@ -448,10 +448,12 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       }
     }
 
-    const resultList = Object.values(resultMap).map((row) => ({
-      ...row,
-      total: row.android + row.ios,
-    }));
+    const resultList = Object.values(resultMap)
+      .map((row) => ({
+        ...row,
+        total: row.android + row.ios,
+      }))
+      .filter((row) => row.total > 0);
 
     resultList.sort((a, b) => b.total - a.total);
 
