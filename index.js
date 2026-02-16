@@ -139,6 +139,7 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
       "Ismail Mukhtaar Maxamuud",
       "Abdirahman Ibrahim Shire",
       "Iqra Abdinuur Ali",
+      "Aisha Khalif Hersi",
     ].map((n) => n.trim().toLowerCase());
 
     // ===== SYSTEM OVERVIEW =====
