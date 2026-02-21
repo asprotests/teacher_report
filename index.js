@@ -401,7 +401,7 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       11: "Boondheere",
       12: "Cabdicasiis",
       13: "Deyniile",
-      14: "Dharkeensey",
+      14: "Dharkeenley",
       15: "Ibra Hakiim",
       16: "Darusalam",
       17: "Hodan",
