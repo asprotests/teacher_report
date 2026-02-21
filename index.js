@@ -503,7 +503,7 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       filteredKeys = [...agentIds, "otherAgents", "social", "friend", "other"];
     }
 
-    const resultList = Object.entries(resultMap)
+    let resultList = Object.entries(resultMap)
       .filter(([key]) => {
         const numKey = parseInt(key, 10);
         return filteredKeys.includes(isNaN(numKey) ? key : numKey);
@@ -512,6 +512,11 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
         ...row,
         total: row.android + row.ios,
       }));
+
+    // Filter out zero records for Download Report, but show all for Degmooyinka
+    if (category !== "degmooyinka") {
+      resultList = resultList.filter((row) => row.total > 0);
+    }
 
     resultList.sort((a, b) => b.total - a.total);
 
