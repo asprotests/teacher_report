@@ -372,7 +372,12 @@ app.get("/quran-teacher-report/report", authenticateToken, async (req, res) => {
 
 // Survey endpoint with new agents added
 app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
-  const { from, to } = req.query;
+  const { from, to, category } = req.query;
+
+  // IDs for Degmooyinka (districts)
+  const degmooyinkaIds = [11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23, 24, 26, 27, 28, 29, 31, 32, 33, 34];
+  // IDs for original agents
+  const agentIds = [10, 15, 20, 25, 30, 35, 40, 45, 55, 60, 65, 70, 75, 85];
 
   if (!from || !to) {
     return res
@@ -489,10 +494,24 @@ app.get("/quran-teacher-report/survey", authenticateToken, async (req, res) => {
       }
     }
 
-    const resultList = Object.values(resultMap).map((row) => ({
-      ...row,
-      total: row.android + row.ios,
-    }));
+    // Filter based on category
+    let filteredKeys;
+    if (category === "degmooyinka") {
+      filteredKeys = degmooyinkaIds;
+    } else {
+      // Default: agents + other categories (social, friend, other, otherAgents)
+      filteredKeys = [...agentIds, "otherAgents", "social", "friend", "other"];
+    }
+
+    const resultList = Object.entries(resultMap)
+      .filter(([key]) => {
+        const numKey = parseInt(key, 10);
+        return filteredKeys.includes(isNaN(numKey) ? key : numKey);
+      })
+      .map(([, row]) => ({
+        ...row,
+        total: row.android + row.ios,
+      }));
 
     resultList.sort((a, b) => b.total - a.total);
 
